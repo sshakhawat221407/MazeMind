@@ -1,0 +1,15 @@
+# Normalise line endings in the repository to LF, while letting Git check out
+# whatever each platform prefers. Without this, a Windows checkout commits CRLF
+# and every file looks modified on a Linux or macOS clone.
+* text=auto eol=lf
+
+# Batch files must keep CRLF in the working tree. cmd.exe can mis-parse a .bat
+# with bare LF endings - labels and goto are the usual casualties - so the
+# launcher would break on a fresh clone if it inherited the eol=lf rule above.
+*.bat text eol=crlf
+
+# Binary artefacts must never be line-ending converted.
+*.npz binary
+*.png binary
+*.jpg binary
+*.ttf binary

@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Trained artefacts.
+# models/heuristic.npz, training_report.json and training_history.npz are
+# committed on purpose (67 KB total) so the game and the AI Lab work on a fresh
+# clone without anyone having to train first. They are simply not listed here.
+# To keep the repository source-only instead, add `models/` below and rebuild
+# with `python main.py train`.
+models/benchmark.npz
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Scratch files (throwaway probes named _smoke1.py, _probe.py, ...)
+_*.py
+# ...but that pattern also matches __init__.py, which would silently drop every
+# package marker and leave a fresh clone unable to import anything.
+!**/__init__.py
+
+*.log
+screenshots/tmp/
