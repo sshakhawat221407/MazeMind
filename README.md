@@ -275,10 +275,10 @@ merge without conflicts.
 
 | Part | Branch | Member | Responsibility |
 | --- | --- | --- | --- |
-| Foundation | `main` | _add name_ | README, shared config, launcher, docs |
-| Part 1 | `part-1-game-engine` | _add name_ | Game engine, AI opponent, CSP |
-| Part 2 | `part-2-search-ml` | _add name_ | Search algorithms, machine learning, AI Lab |
-| Part 3 | `part-3-user-interface` | _add name_ | User interface and application |
+| Foundation | `main` | Error 404 | README, shared config, launcher, docs |
+| Part 1 | `part-1-game-engine` | Samsad Ibne Shakhawat Nuhash | Game engine, AI opponent, CSP |
+| Part 2 | `part-2-search-ml` | Shreedhara Datta | Search algorithms, machine learning, AI Lab |
+| Part 3 | `part-3-user-interface` | Rifah Tasniea Katha | User interface and application |
 
 ### Foundation — `main`
 
