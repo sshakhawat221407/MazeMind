@@ -276,9 +276,9 @@ merge without conflicts.
 | Part | Branch | Member | Responsibility |
 | --- | --- | --- | --- |
 | Foundation | `main` | Error 404 | README, shared config, launcher, docs |
-| Part 1 | `part-1-game-engine` | Samsad Ibne Shakhawat Nuhash | Game engine, AI opponent, CSP |
-| Part 2 | `part-2-search-ml` | Shreedhara Datta | Search algorithms, machine learning, AI Lab |
-| Part 3 | `part-3-user-interface` | Rifah Tasniea Katha | User interface and application |
+| Part 1 | `Samsad-Ibne-Shakhawat` | Samsad Ibne Shakhawat Nuhash | Game engine, AI opponent, CSP |
+| Part 2 | `0112230253` | Shreedhara Datta | Search algorithms, machine learning, AI Lab |
+| Part 3 | `Rifah-Katha` | Rifah Tasniea Katha | User interface and application |
 
 ### Foundation — `main`
 
@@ -290,7 +290,7 @@ from the same base.
 
 ### Part 1 — Game Engine, AI Opponent and CSP
 
-**Branch:** `part-1-game-engine` · **AI techniques:** constraint satisfaction,
+**Branch:** `Samsad-Ibne-Shakhawat` · **AI techniques:** constraint satisfaction,
 agent decision-making
 
 - Maze data structure, terrain and distance fields
@@ -308,7 +308,7 @@ agent decision-making
 
 ### Part 2 — Search Algorithms and Machine Learning
 
-**Branch:** `part-2-search-ml` · **AI techniques:** BFS, DFS, Dijkstra, Greedy,
+**Branch:** `0112230253` · **AI techniques:** BFS, DFS, Dijkstra, Greedy,
 A\*, neural network, learned heuristic
 
 - BFS, DFS, Dijkstra, Greedy best-first and A\*, with step-by-step animation
@@ -324,7 +324,7 @@ A\*, neural network, learned heuristic
 
 ### Part 3 — User Interface and Application
 
-**Branch:** `part-3-user-interface` · **Focus:** UI design
+**Branch:** `Rifah-Katha` · **Focus:** UI design
 
 - Application entry point and command-line options
 - Window, main loop and animated screen transitions
@@ -341,11 +341,11 @@ game, results, help)
 ## Git workflow
 
 ```
-main ──●──────────────────────────●──────────●──────────●──▶ complete game
-       │                          ▲          ▲          ▲
-       ├── part-1-game-engine ────●          │          │
-       ├── part-2-search-ml ─────────────────●          │
-       └── part-3-user-interface ───────────────────────●
+main ──●─────────────────────────────●──────────●──────────●──▶ complete game
+       │                             ▲          ▲          ▲
+       ├── Samsad-Ibne-Shakhawat ────●          │          │
+       ├── 0112230253 ──────────────────────────●          │
+       └── Rifah-Katha ────────────────────────────────────●
 ```
 
 1. The foundation is committed to `main`.
