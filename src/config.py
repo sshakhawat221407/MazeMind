@@ -90,6 +90,24 @@ DOOR_ROUTE_SHARE = 0.7
 # at least this many seconds; smaller gains are not worth abandoning its plan.
 DOOR_DETOUR_MARGIN = 0.4
 
+# How long a bot hesitates after a door it is waiting at unlocks.
+#
+# Without this the bot steps through on the very frame the lock expires and
+# re-locks the door in the same instant, so the door is never *drawn* open: it
+# goes red, the bot teleports through, it is red again. It reads as the bot
+# walking through a locked door. The pause guarantees a visible open window,
+# and it is fairer too - a human waiting at the same door cannot react in one
+# sixtieth of a second either. The bot's own step delay is added on top, so
+# weaker tiers hesitate longer than stronger ones.
+DOOR_BOT_REACTION = 0.35
+
+# How long a door shows that it has just changed state, so the change is
+# readable even when somebody passes through immediately afterwards.
+DOOR_OPEN_FLASH = 0.8   # green flash as a door unlocks
+DOOR_SLAM_FLASH = 0.35  # ring in the colour of whoever just locked it
+DOOR_CLOSE_TIME = 0.3   # door leaf swinging shut behind whoever passed
+DOOR_SWING_TIME = 0.6   # door leaf swinging back open once the lock ends
+
 # Once someone finishes, the others get this long to complete the maze before
 # the match is called. Without it a race ends the instant one player touches
 # the exit, and the loser never gets to finish their own run or see their own
