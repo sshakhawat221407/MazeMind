@@ -42,6 +42,15 @@ GATE = (196, 206, 226)
 GATE_DIM = (112, 124, 152)
 GATE_LOCKED = (226, 72, 96)
 GATE_LOCKED_DIM = (104, 40, 56)
+# The flash as a gate unlocks. Deliberately not green: the exit is green, and a
+# green gate flashing next to a green exit is ambiguous. Bright white-silver
+# belongs to the gate's own palette and is the brightest thing on screen for
+# the moment it lasts.
+GATE_OPENING = (240, 247, 255)
+# The door leaf itself: warm wood, so an open door reads as a real door.
+DOOR_WOOD = (168, 118, 72)
+DOOR_WOOD_DARK = (96, 64, 38)
+DOOR_HANDLE = (236, 200, 96)
 
 WALL = (78, 93, 133)
 WALL_HI = (104, 122, 168)

@@ -18,7 +18,8 @@ from dataclasses import dataclass, field
 import numpy as np
 import pygame
 
-from ..config import DIRECTIONS, E, N, S, W
+from ..config import (DIRECTIONS, DOOR_CLOSE_TIME, DOOR_LOCK_DURATION, DOOR_OPEN_FLASH,
+                      DOOR_SLAM_FLASH, DOOR_SWING_TIME, E, N, S, W)
 from ..core.game import Game, PowerUp
 from ..core.maze import Cell, Maze
 from . import theme as T
@@ -398,62 +399,122 @@ class MazeView:
         y = oy + max(a[1], b[1]) * c
         return (x, y), (x + c, y)
 
-    def draw_doors(self, surface: pygame.Surface, game: Game) -> None:
-        """Every gate, open or locked.
+    def door_swing(self, game: Game, a: Cell, b: Cell) -> float:
+        """How shut a gate's door leaf is: 0 = wide open, 1 = shut.
 
-        Gates are drawn even while open, because their whole point is that you
-        can plan around them. An open gate is a pair of silver posts with a
-        dashed threshold. A locked gate fills with a red bar that drains toward
-        its first post as the lock runs down, with a padlock on top - so which
-        gates are about to open can be read at a glance, not guessed.
+        Doors stand open. Walking through one slams it shut over
+        DOOR_CLOSE_TIME; when its lock runs out it swings back open over
+        DOOR_SWING_TIME. Both use an ease-out so the leaf decelerates into
+        place like a real door instead of snapping.
+        """
+        if game.is_door_locked(a, b):
+            age = DOOR_LOCK_DURATION - game.lock_remaining(a, b)
+            t = min(1.0, age / DOOR_CLOSE_TIME)
+            return 1.0 - (1.0 - t) ** 3
+        opened = game.open_age(a, b)
+        if opened is None:
+            return 0.0
+        t = min(1.0, opened / DOOR_SWING_TIME)
+        return (1.0 - t) ** 3
+
+    def draw_doors(self, surface: pygame.Surface, game: Game) -> None:
+        """Every gate, drawn as a real hinged door.
+
+        A door stands open, its leaf swung back flat against the wall, so the
+        passage is visibly free. When a player walks through, the leaf swings
+        shut across the passage, turns red and shows a padlock and a countdown
+        of the seconds left. When the timer runs out it unlocks, glows and
+        swings open again - every time someone passes.
         """
         if not game.doors_enabled or not game.doors:
             return
         c = self.cell
-        post = max(3, int(c * 0.2))
-        bar = max(3, int(c * 0.26))
+        post = max(4, int(c * 0.22))
+        thick = max(3, int(c * 0.2))
 
         for a, b in game.doors:
             p1, p2 = self.gate_line(a, b)
-            vertical = p1[0] == p2[0]
             locked = game.is_door_locked(a, b)
+            mid = ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
+            length = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+            ux, uy = (p2[0] - p1[0]) / length, (p2[1] - p1[1]) / length
+            # Swing into the far cell (right of a vertical edge, below a
+            # horizontal one), so the open leaf lies along that cell's wall.
+            nx, ny = (1.0, 0.0) if p1[0] == p2[0] else (0.0, 1.0)
 
+            # Ring in the colour of whoever just slammed it.
+            slam = game.slam_age(a, b)
+            if slam is not None:
+                pid = game.locker_of(a, b)
+                colour = T.PLAYER_COLORS[pid % len(T.PLAYER_COLORS)] \
+                    if pid is not None else T.GATE_LOCKED
+                t = slam / DOOR_SLAM_FLASH
+                radius = int(c * (0.35 + 0.9 * t))
+                ring = pygame.Surface((radius * 2 + 4, radius * 2 + 4), pygame.SRCALPHA)
+                pygame.draw.circle(ring, T.with_alpha(colour, int(210 * (1 - t))),
+                                   (radius + 2, radius + 2), radius,
+                                   max(2, int(c * 0.12 * (1 - t)) + 1))
+                surface.blit(ring, (mid[0] - radius - 2, mid[1] - radius - 2))
+
+            # Threshold on the floor, so an open doorway still reads as one.
+            opened = game.open_age(a, b)
+            fade = 0.0 if opened is None else 1.0 - opened / DOOR_OPEN_FLASH
+            sill = T.lerp_color(T.GATE_DIM, T.GATE_OPENING, fade)
+            pygame.draw.line(surface, sill, p1, p2, max(1, thick // 3))
+
+            # The leaf, hinged at p1: angle 0 lies across the passage (shut),
+            # 90 degrees lies flat against the wall (open).
+            shut = self.door_swing(game, a, b)
+            ang = (1.0 - shut) * math.pi / 2
+            vx = math.cos(ang) * ux + math.sin(ang) * nx
+            vy = math.cos(ang) * uy + math.sin(ang) * ny
+            wx, wy = -vy * thick / 2, vx * thick / 2
+            leaf_len = length - post * 0.5
+            tip = (p1[0] + vx * leaf_len, p1[1] + vy * leaf_len)
+            poly = [(p1[0] + wx, p1[1] + wy), (tip[0] + wx, tip[1] + wy),
+                    (tip[0] - wx, tip[1] - wy), (p1[0] - wx, p1[1] - wy)]
             if locked:
-                # Full-length dark track, then the time still left in bright
-                # red, anchored at the first post so it visibly counts down.
-                remaining = 1.0 - game.lock_progress(a, b)
-                pygame.draw.line(surface, T.GATE_LOCKED_DIM, p1, p2, bar)
-                end = (p1[0], int(p1[1] + (p2[1] - p1[1]) * remaining)) if vertical \
-                    else (int(p1[0] + (p2[0] - p1[0]) * remaining), p1[1])
-                if end != p1:
-                    pygame.draw.line(surface, T.GATE_LOCKED, p1, end, bar)
-                post_colour = T.GATE_LOCKED
+                body, edge = T.GATE_LOCKED, T.GATE_LOCKED_DIM
             else:
-                # Dashed threshold between the posts: three short segments.
-                for i in range(3):
-                    t0 = 0.18 + i * 0.24
-                    t1 = t0 + 0.14
-                    s = (int(p1[0] + (p2[0] - p1[0]) * t0),
-                         int(p1[1] + (p2[1] - p1[1]) * t0))
-                    e = (int(p1[0] + (p2[0] - p1[0]) * t1),
-                         int(p1[1] + (p2[1] - p1[1]) * t1))
-                    pygame.draw.line(surface, T.GATE_DIM, s, e, max(2, bar // 2))
-                post_colour = T.GATE
+                body = T.lerp_color(T.DOOR_WOOD, T.GATE_OPENING, fade * 0.6)
+                edge = T.DOOR_WOOD_DARK
+            pygame.draw.polygon(surface, body, poly)
+            pygame.draw.polygon(surface, edge, poly, max(1, thick // 4))
+            # Two inset panels and a handle near the free end.
+            for t0, t1 in ((0.12, 0.44), (0.56, 0.84)):
+                s0 = (p1[0] + vx * leaf_len * t0, p1[1] + vy * leaf_len * t0)
+                s1 = (p1[0] + vx * leaf_len * t1, p1[1] + vy * leaf_len * t1)
+                pygame.draw.line(surface, edge, s0, s1, max(1, thick // 3))
+            knob = (int(p1[0] + vx * leaf_len * 0.9), int(p1[1] + vy * leaf_len * 0.9))
+            pygame.draw.circle(surface, T.DOOR_HANDLE, knob, max(2, thick // 3))
 
+            # Frame posts on both sides of the doorway; the hinge post is solid.
+            post_colour = T.GATE_LOCKED if locked else T.lerp_color(T.GATE, T.GATE_OPENING, fade)
             for p in (p1, p2):
                 pygame.draw.rect(surface, post_colour,
-                                 pygame.Rect(p[0] - post // 2, p[1] - post // 2,
-                                             post, post),
+                                 pygame.Rect(p[0] - post // 2, p[1] - post // 2, post, post),
                                  border_radius=max(1, post // 3))
 
             if locked:
-                # A dark disc behind the padlock, so it reads against the bar
-                # instead of dissolving into it at small cell sizes.
-                mid = ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
-                pygame.draw.circle(surface, T.BG_DEEP, mid, max(4, int(c * 0.3)))
-                pygame.draw.circle(surface, T.GATE_LOCKED, mid,
-                                   max(4, int(c * 0.3)), max(1, c // 14))
-                blit_icon(surface, "padlock", mid, int(c * 0.46), T.TEXT)
+                # Padlock in a disc whose rim drains as the lock runs down,
+                # with the seconds left printed beside it.
+                remaining = game.lock_remaining(a, b)
+                r = max(5, int(c * 0.32))
+                pygame.draw.circle(surface, T.BG_DEEP, mid, r)
+                frac = remaining / DOOR_LOCK_DURATION
+                if frac > 0:
+                    rect = pygame.Rect(mid[0] - r, mid[1] - r, r * 2, r * 2)
+                    pygame.draw.arc(surface, T.GATE_LOCKED, rect, math.pi / 2,
+                                    math.pi / 2 + 2 * math.pi * frac, max(2, c // 12))
+                blit_icon(surface, "padlock", mid, int(c * 0.42), T.TEXT)
+                label = T.text_surface(f"{remaining:.1f}", max(10, int(c * 0.42)),
+                                       T.TEXT, bold=True)
+                lx = mid[0] + int(nx * c * 0.62) - label.get_width() // 2
+                ly = mid[1] + int(ny * c * 0.62) - label.get_height() // 2
+                bg = pygame.Rect(lx - 3, ly - 1, label.get_width() + 6, label.get_height() + 2)
+                pygame.draw.rect(surface, T.BG_DEEP, bg, border_radius=4)
+                pygame.draw.rect(surface, T.GATE_LOCKED, bg, 1, border_radius=4)
+                surface.blit(label, (lx, ly))
 
     def draw_players(self, surface: pygame.Surface, game: Game, dt: float,
                      t: float) -> None:
